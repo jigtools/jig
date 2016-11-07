@@ -1,10 +1,10 @@
 Makefile
 Dockerfile
 .dockerignore
-desktop.zip
-desktop
-desktop.app
-desktop.exe
-desktop.zip
+jig.zip
+jig
+jig.app
+jig.exe
+jig.zip
 README.md
 LICENSE

@@ -1,13 +1,17 @@
 .PHONY: build shell docker-build docker run release
 
-TARGET=desktop
+TARGET=jig
 
 RELEASE_DATE=$(shell date +%F)
 COMMIT_HASH=$(shell git rev-parse --short HEAD 2>/dev/null)
-BUILD_DATE=$(date +%FT%T%z)
-LDFLAGS=-ldflags "-X github.com/SvenDowideit/${TARGET}.CommitHash=${COMMIT_HASH} -X github.com/SvenDowideit/${TARGET}.Version=${RELEASE_DATE}"
+GITSTATUS=$(git status --porcelain --untracked-files=no)
+ifneq ($(GITSTATUS),)
+  DIRTY=-dirty
+endif
 
-AWSTOKENSFILE ?= ../aws.env
+LDFLAGS=-ldflags "-X main.Version=${RELEASE_DATE} -X main.CommitHash=${COMMIT_HASH}${DIRTY}"
+
+AWSTOKENSFILE ?= ~/aws.env
 -include $(AWSTOKENSFILE)
 export GITHUB_USERNAME GITHUB_TOKEN
 
@@ -34,16 +38,24 @@ docker: docker-build
 run:
 	./${TARGET} .
 
-
+trash:
+	go get github.com/Shopify/logrus-bugsnag
+	go get github.com/Sirupsen/logrus
+	go get github.com/bugsnag/bugsnag-go
+	go get github.com/urfave/cli
+	go get github.com/docker/machine/
+	go get github.com/rancher/cli/
+	go get github.com/rancher/go-rancher/
+	go get github.com/blang/semver
 
 release: docker
 	# TODO: check that we have upstream master, bail if not
 	docker run --rm -it -e GITHUB_TOKEN ${TARGET} \
 		github-release release --user SvenDowideit --repo ${TARGET} --tag $(RELEASE_DATE)
-	docker run --rm -it -e GITHUB_TOKEN ${TARGET} \
-		github-release upload --user SvenDowideit --repo ${TARGET} --tag $(RELEASE_DATE) \
-			--name ${TARGET} \
-			--file ${TARGET}
+	#docker run --rm -it -e GITHUB_TOKEN ${TARGET} \
+	#	github-release upload --user SvenDowideit --repo ${TARGET} --tag $(RELEASE_DATE) \
+	#		--name ${TARGET} \
+	#		--file ${TARGET}
 	docker run --rm -it -e GITHUB_TOKEN ${TARGET} \
 		github-release upload --user SvenDowideit --repo ${TARGET} --tag $(RELEASE_DATE) \
 			--name ${TARGET}-osx \

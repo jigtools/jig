@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/SvenDowideit/desktop/commands"
-
 	"github.com/Sirupsen/logrus"
-	"github.com/codegangsta/cli"
+	"github.com/SvenDowideit/jig/commands"
+	"github.com/SvenDowideit/jig/log"
+
+	"github.com/urfave/cli"
 )
 
 // Version is set from the go build commandline
@@ -31,9 +32,13 @@ func main() {
 		}
 	}()
 	app := cli.NewApp()
-	app.Name = "desktop"
-	app.Version = Version
-	app.Usage = "Rancher on the Desktop"
+	app.Name = "jig"
+	if Version != "" {
+		app.Version = fmt.Sprintf("%s, build %s", Version, CommitHash)
+	} else {
+		app.Version = "dev"
+	}
+	app.Usage = "Create and manage hosts with jig.tools"
 	app.EnableBashCompletion = true
 
 	app.Flags = []cli.Flag{
@@ -45,11 +50,15 @@ func main() {
 	app.Commands = []cli.Command{
 		versionCommand,
 		commands.Install,
+		commands.Uninstall,
 	}
 	app.Before = func(context *cli.Context) error {
 		if context.GlobalBool("debug") {
-			logrus.SetLevel(logrus.DebugLevel)
+			log.InitLogging(logrus.DebugLevel, app.Version)
+		} else {
+			log.InitLogging(logrus.InfoLevel, app.Version)
 		}
+
 		return nil
 	}
 	if err := app.Run(os.Args); err != nil {
@@ -61,8 +70,8 @@ var versionCommand = cli.Command{
 	Name:  "version",
 	Usage: "return the version",
 	Action: func(context *cli.Context) error {
-		fmt.Println(context.App.Version)
-		fmt.Println(CommitHash)
+		fmt.Printf("%s version %s, build %s\n", context.App.Name, context.App.Version, CommitHash)
+		// TODO: add versions of all the other SW we install
 		return nil
 	},
 }
