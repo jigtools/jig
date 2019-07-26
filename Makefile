@@ -4,7 +4,7 @@ TARGET=jig
 
 RELEASE_DATE=$(shell date +%F)
 COMMIT_HASH=$(shell git rev-parse --short HEAD 2>/dev/null)
-GITSTATUS=$(git status --porcelain --untracked-files=no)
+GITSTATUS=$(shell git status --porcelain --untracked-files=no)
 ifneq ($(GITSTATUS),)
   DIRTY=-dirty
 endif
